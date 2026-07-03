@@ -1,0 +1,36 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="card glass-card p-4">
+            <h3 class="mb-4"><i class="fa-solid fa-brain text-success"></i> Phân tích từ Trí tuệ Nhân tạo</h3>
+            <div id="reports-container">
+                <!-- Load bằng JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch('/api/report')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById("reports-container");
+                if (data.length === 0) {
+                    container.innerHTML = "<p>Chưa có cảnh báo nào.</p>";
+                    return;
+                }
+                data.forEach(report => {
+                    let badgeClass = report.risk_level === 'Cao' ? 'bg-danger' : (report.risk_level === 'Trung bình' ? 'bg-warning text-dark' : 'bg-info text-dark');
+                    const div = document.createElement("div");
+                    div.className = "alert alert-dark mb-3";
+                    div.innerHTML = `
+                        <h5>Cảnh báo lúc: ${moment(report.created_at).format('DD/MM/YYYY HH:mm:ss')} <span class="badge ${badgeClass}">${report.risk_level}</span></h5>
+                        <p><strong>Phân tích:</strong> ${report.analysis}</p>
+                        <hr>
+                        <p class="mb-0"><strong>Khuyến nghị:</strong> ${report.recommendation}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+    });
+</script>

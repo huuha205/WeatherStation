@@ -1,0 +1,47 @@
+<div class="min-h-[80vh] flex items-center justify-center animate-fade-up">
+    <div class="w-full max-w-sm">
+        <div class="glass-card p-8">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <i class="fa-solid fa-cloud-bolt text-white text-2xl"></i>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight">Smart Weather</h2>
+                <p class="text-white/40 text-sm mt-1">Đăng nhập để tiếp tục</p>
+            </div>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert-banner mb-4">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div class="alert-banner-text"><%= error %></div>
+                </div>
+            <% } %>
+
+            <form action="/login" method="POST" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Tài khoản</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-user text-white/20 text-sm"></i>
+                        </div>
+                        <input type="text" name="username" class="w-full pl-10 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm placeholder-white/20 transition-all outline-none focus:border-primary/40 focus:bg-white/[0.06]" placeholder="Username" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Mật khẩu</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-lock text-white/20 text-sm"></i>
+                        </div>
+                        <input type="password" name="password" class="w-full pl-10 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm placeholder-white/20 transition-all outline-none focus:border-primary/40 focus:bg-white/[0.06]" placeholder="Password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 active:shadow-none">
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

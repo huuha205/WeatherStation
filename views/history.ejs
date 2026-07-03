@@ -1,0 +1,61 @@
+<div class="animate-fade-up">
+    <div class="glass-card mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-primary"></i> Lịch sử thu thập
+            </h2>
+            <button class="btn-glass" onclick="exportCSV()">
+                <i class="fa-solid fa-file-csv text-success"></i> Xuất CSV
+            </button>
+        </div>
+        
+        <div class="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <table class="w-full text-left border-collapse text-sm" id="historyTable">
+                <thead>
+                    <tr class="border-b border-white/[0.06] bg-white/[0.02]">
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Thời gian</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Nhiệt độ</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Độ ẩm</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Áp suất</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Mưa</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Gió</th>
+                        <th class="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider">Ánh sáng</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/[0.03]">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch('/api/history')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#historyTable tbody");
+                data.forEach(row => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-white/[0.03] transition-colors duration-150";
+                    tr.innerHTML = `
+                        <td class="p-3 text-white/60">${moment(row.created_at).format('DD/MM/YYYY HH:mm:ss')}</td>
+                        <td class="p-3 font-medium" style="color: #f87171">${row.temperature}°C</td>
+                        <td class="p-3 font-medium" style="color: #38bdf8">${row.humidity}%</td>
+                        <td class="p-3 font-medium" style="color: #facc15">${row.pressure} hPa</td>
+                        <td class="p-3">
+                            <span class="font-medium">${row.rain_mm} mm</span>
+                            <span class="ml-2 text-xs ${row.rain ? 'text-red-400' : 'text-green-400'}">${row.rain ? '● Mưa' : '● Tạnh'}</span>
+                        </td>
+                        <td class="p-3 font-medium" style="color: #2dd4bf">${row.wind_kmh} km/h</td>
+                        <td class="p-3 font-medium" style="color: #fb923c">${row.light} lux</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+    });
+
+    function exportCSV() {
+        window.location.href = '/api/history?csv=true';
+    }
+</script>
