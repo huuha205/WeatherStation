@@ -187,11 +187,6 @@ document.addEventListener("DOMContentLoaded", () => {
             weatherChart.data.datasets[1].data.push(data.humidity);
             weatherChart.update();
         }
-
-        // Update Weather API card
-        if (data.forecast) {
-            updateWeatherApi(data.forecast);
-        }
     });
 
     socket.on('new_ai_report', (aiResult) => {
@@ -355,33 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="ai-block-label mb-2 pl-1">Khuyến nghị</div>
                         ${recHtml}
                     </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // ─── WEATHER API CARD ───
-    function updateWeatherApi(forecast) {
-        const box = document.getElementById('weather-api-box');
-        if (!box || !forecast) return;
-
-        box.innerHTML = `
-            <div class="space-y-0">
-                <div class="weather-api-row">
-                    <span class="label"><i class="fa-solid fa-cloud mr-2 text-white/30"></i>Thời tiết</span>
-                    <span class="val">${forecast.description || forecast.weather || 'Không rõ'}</span>
-                </div>
-                <div class="weather-api-row">
-                    <span class="label"><i class="fa-solid fa-temperature-half mr-2 text-white/30"></i>Nhiệt độ</span>
-                    <span class="val">${forecast.temperature ? forecast.temperature + '°C' : 'Không rõ'}</span>
-                </div>
-                <div class="weather-api-row">
-                    <span class="label"><i class="fa-solid fa-location-dot mr-2 text-white/30"></i>Vị trí</span>
-                    <span class="val">${forecast.location || 'Theo cấu hình'}</span>
-                </div>
-                <div class="weather-api-row">
-                    <span class="label"><i class="fa-solid fa-clock mr-2 text-white/30"></i>Cập nhật lúc</span>
-                    <span class="val">${moment().format('HH:mm:ss')}</span>
                 </div>
             </div>
         `;

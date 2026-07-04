@@ -2,7 +2,6 @@ const SensorModel = require('../models/sensorModel');
 const AiReportModel = require('../models/aiReportModel');
 const geminiService = require('../services/geminiService');
 const fcmService = require('../services/fcmService');
-const weatherService = require('../services/weatherService');
 
 let lastAiTime = 0;
 let lastRainState = null;
@@ -24,9 +23,7 @@ exports.receiveSensorData = async (req, res) => {
             // 2. Broadcast realtime via Socket.IO
             const io = req.app.get('io');
             if (io) {
-                // Kéo thêm API thời tiết để so sánh
-                const forecast = await weatherService.getForecast();
-                io.emit('new_sensor_data', { ...data, forecast, id: sensorId });
+                io.emit('new_sensor_data', { ...data, id: sensorId });
             }
 
             // 3. AI Analysis (Tự động dự báo mỗi 1 phút HOẶC khi mưa bắt đầu/kết thúc)
@@ -36,8 +33,7 @@ exports.receiveSensorData = async (req, res) => {
             if (now - lastAiTime >= AI_COOLDOWN_MS || isRainChanged) {
                 lastAiTime = now;
                 lastRainState = data.rain;
-                const forecast = await weatherService.getForecast();
-                const aiResult = await geminiService.analyzeWeather(data, forecast);
+                const aiResult = await geminiService.analyzeWeather(data);
                 
                 if (aiResult) {
                     // Lưu AI report
@@ -108,8 +104,7 @@ exports.getReports = (req, res) => {
 exports.forceAiAnalysis = (req, res) => {
     SensorModel.getLatest(async (err, data) => {
         if (err || !data) return res.status(404).json({ error: 'No data' });
-        const forecast = await weatherService.getForecast();
-        const aiResult = await geminiService.analyzeWeather(data, forecast);
+        const aiResult = await geminiService.analyzeWeather(data);
         if (aiResult) {
             AiReportModel.insert({
                 sensor_id: data.id,
@@ -140,8 +135,7 @@ exports.chat = (req, res) => {
     SensorModel.getLatest(async (err, sensorData) => {
         if (err || !sensorData) return res.status(404).json({ error: 'No sensor data available to context' });
 
-        const forecastData = await weatherService.getForecast();
-        const responseText = await geminiService.chatWithAI(sensorData, forecastData, message, history || []);
+        const responseText = await geminiService.chatWithAI(sensorData, message, history || []);
         
         res.json({ response: responseText });
     });
