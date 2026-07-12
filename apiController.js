@@ -2,6 +2,7 @@ const SensorModel = require('../models/sensorModel');
 const AiReportModel = require('../models/aiReportModel');
 const geminiService = require('../services/geminiService');
 const fcmService = require('../services/fcmService');
+const telegramService = require('../services/telegramService');
 
 let lastAiTime = 0;
 let lastRainState = null;
@@ -57,6 +58,11 @@ exports.receiveSensorData = async (req, res) => {
                         fcmService.sendNotification(
                             `Cảnh báo thời tiết (${aiResult.risk})`, 
                             aiResult.summary
+                        );
+                        // Bắn Telegram Alert
+                        telegramService.sendAlert(
+                            `Cảnh báo thời tiết (${aiResult.risk})`, 
+                            `${aiResult.summary}\n\n💡 *Gợi ý:*\n- ${aiResult.recommendations.join('\n- ')}`
                         );
                     }
                 }
@@ -137,4 +143,14 @@ exports.chat = (req, res) => {
         
         res.json({ response: responseText });
     });
+};
+
+exports.saveFcmToken = (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+    
+    // Gọi fcmService đăng ký token này vào topic weather_alerts
+    fcmService.subscribeToTopic(token);
+    
+    res.json({ success: true });
 };
