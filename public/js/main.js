@@ -405,3 +405,53 @@ window.forceAI = function() {
             alert('Lỗi kết nối AI!');
         });
 }
+
+// ─── FIREBASE CLOUD MESSAGING ───
+try {
+    const firebaseConfig = {
+        apiKey: "AIzaSyBwYbNXHxawRhWQG8eT-c9T8YoXIzUIEKM",
+        authDomain: "webweather-349d9.firebaseapp.com",
+        projectId: "webweather-349d9",
+        storageBucket: "webweather-349d9.firebasestorage.app",
+        messagingSenderId: "904138913216",
+        appId: "1:904138913216:web:71a4603eb214ec1c2d8425"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+
+    // Hàm này sẽ được gọi khi bấm nút "Bật Cảnh Báo"
+    window.enablePushNotifications = function() {
+        const btn = document.getElementById('btn-enable-push');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xin quyền...';
+
+        messaging.requestPermission().then(() => {
+            console.log("Notification permission granted.");
+            return messaging.getToken({ vapidKey: "BHWPWwRalV6qK3_aYdTPP7T_mebECDxSMR26aVSqeHBGq8keJt6srIwrnaYLh17eZxKGuWE7otorQUJBt8ITbGw" });
+        }).then((token) => {
+            if (token) {
+                console.log("FCM Device Token:", token);
+                // Gửi Token lên Backend Node.js
+                fetch('/api/fcm-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token })
+                }).then(() => {
+                    if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Bật Cảnh Báo';
+                    alert("Kích hoạt nhận cảnh báo thành công!");
+                });
+            }
+        }).catch((err) => {
+            console.log("FCM Error:", err);
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lỗi (Xem Console)';
+            alert("Bạn đã chặn quyền gửi thông báo hoặc có lỗi xảy ra. Hãy mở ổ khóa trên thanh địa chỉ để cấp quyền thủ công.");
+        });
+    };
+
+    // Lắng nghe khi đang mở trình duyệt
+    messaging.onMessage((payload) => {
+        console.log("Message received: ", payload);
+        alert(`🚨 ${payload.notification.title}\n\n${payload.notification.body}`);
+    });
+} catch (e) {
+    console.error("Firebase init error:", e);
+}
