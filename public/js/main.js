@@ -354,26 +354,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
     }
-
-    // ─── FIREBASE ───
-    if (typeof firebase !== 'undefined') {
-        const messaging = firebase.messaging();
-        messaging.requestPermission()
-            .then(() => {
-                console.log("Notification permission granted.");
-                return messaging.getToken();
-            })
-            .then(token => {
-                console.log("FCM Token:", token);
-            })
-            .catch(err => {
-                console.log("Permission denied", err);
-            });
-
-        messaging.onMessage((payload) => {
-            console.log("Message received. ", payload);
-            alert(`[Cảnh báo] ${payload.notification.title}\n${payload.notification.body}`);
-        });
     }
 });
 
@@ -424,9 +404,13 @@ try {
         const btn = document.getElementById('btn-enable-push');
         if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xin quyền...';
 
-        messaging.requestPermission().then(() => {
-            console.log("Notification permission granted.");
-            return messaging.getToken({ vapidKey: "BHWPWwRalV6qK3_aYdTPP7T_mebECDxSMR26aVSqeHBGq8keJt6srIwrnaYLh17eZxKGuWE7otorQUJBt8ITbGw" });
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log("Notification permission granted.");
+                return messaging.getToken({ vapidKey: "BHWPWwRalV6qK3_aYdTPP7T_mebECDxSMR26aVSqeHBGq8keJt6srIwrnaYLh17eZxKGuWE7otorQUJBt8ITbGw" });
+            } else {
+                throw new Error("Permission not granted by user");
+            }
         }).then((token) => {
             if (token) {
                 console.log("FCM Device Token:", token);
