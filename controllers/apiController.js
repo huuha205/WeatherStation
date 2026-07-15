@@ -2,10 +2,12 @@ const SensorModel = require('../models/sensorModel');
 const AiReportModel = require('../models/aiReportModel');
 const geminiService = require('../services/geminiService');
 const fcmService = require('../services/fcmService');
+const telegramService = require('../services/telegramService');
 
 let lastAiTime = 0;
-let lastRainState = null;
-const AI_COOLDOWN_MS = 60000; // 1 minute cooldown to avoid API limits
+let lastRainState = 0; // Lưu trạng thái mưa lần trước
+const AI_COOLDOWN_MS = 30000; // 30 GIÂY GỌI AI 1 LẦN (Cho đồ án giật giật liên tục)
+const EMERGENCY_COOLDOWN_MS = 30000; // Cooldown khẩn cấp cũng 30 giây
 
 exports.receiveSensorData = async (req, res) => {
     try {
@@ -14,6 +16,18 @@ exports.receiveSensorData = async (req, res) => {
         // Validate
         if (data.temperature === undefined || data.humidity === undefined) {
             return res.status(400).json({ error: 'Missing required sensor data' });
+        }
+
+        // ===== FIX RACE CONDITION: KIỂM TRA QUOTA AI NGAY LẬP TỨC =====
+        const now = Date.now();
+        const isRainingNow = (data.rain == 1 || data.rain_mm > 0);
+        const isEmergency = (isRainingNow && lastRainState === 0) || (data.temperature >= 38);
+        lastRainState = isRainingNow ? 1 : 0;
+        
+        let shouldCallAI = false;
+        if ((now - lastAiTime >= AI_COOLDOWN_MS) || (isEmergency && (now - lastAiTime >= EMERGENCY_COOLDOWN_MS))) {
+            shouldCallAI = true;
+            lastAiTime = now; // Khóa ngay lập tức các luồng khác tới cùng lúc
         }
 
         // 1. Lưu DB
@@ -26,13 +40,8 @@ exports.receiveSensorData = async (req, res) => {
                 io.emit('new_sensor_data', { ...data, id: sensorId });
             }
 
-            // 3. AI Analysis (Tự động dự báo mỗi 1 phút HOẶC khi mưa bắt đầu/kết thúc)
-            const now = Date.now();
-            let isRainChanged = (lastRainState !== null && lastRainState !== data.rain);
-            
-            if (now - lastAiTime >= AI_COOLDOWN_MS || isRainChanged) {
-                lastAiTime = now;
-                lastRainState = data.rain;
+            // 3. AI Analysis
+            if (shouldCallAI) {
                 const aiResult = await geminiService.analyzeWeather(data);
                 
                 if (aiResult) {
@@ -59,6 +68,11 @@ exports.receiveSensorData = async (req, res) => {
                         fcmService.sendNotification(
                             `Cảnh báo thời tiết (${aiResult.risk})`, 
                             aiResult.summary
+                        );
+                        // Bắn Telegram Alert
+                        telegramService.sendAlert(
+                            `Cảnh báo thời tiết (${aiResult.risk})`, 
+                            `${aiResult.summary}\n\n💡 *Gợi ý:*\n- ${aiResult.recommendations.join('\n- ')}`
                         );
                     }
                 }
@@ -121,6 +135,20 @@ exports.forceAiAnalysis = (req, res) => {
             const io = req.app.get('io');
             if (io) io.emit('new_ai_report', aiResult);
             
+            // Bắn Push Notification khi người dùng chủ động ấn nút "Làm mới"
+            if (aiResult.risk !== 'Low' && aiResult.risk !== 'Thấp') {
+                const fcmService = require('../services/fcmService');
+                const telegramService = require('../services/telegramService');
+                fcmService.sendNotification(
+                    `Cảnh báo thời tiết (${aiResult.risk})`, 
+                    aiResult.summary
+                );
+                telegramService.sendAlert(
+                    `Cảnh báo thời tiết (${aiResult.risk})`, 
+                    `${aiResult.summary}\n\n💡 *Gợi ý:*\n- ${aiResult.recommendations.join('\n- ')}`
+                );
+            }
+
             res.json({ success: true, aiResult });
         } else {
             res.status(500).json({ error: 'AI Error' });
@@ -139,4 +167,14 @@ exports.chat = (req, res) => {
         
         res.json({ response: responseText });
     });
+};
+
+exports.saveFcmToken = (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+    
+    // Gọi fcmService đăng ký token này vào topic weather_alerts
+    fcmService.subscribeToTopic(token);
+    
+    res.json({ success: true });
 };
