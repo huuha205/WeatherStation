@@ -32,6 +32,14 @@ async function sendNotification(title, body, topic = "weather_alerts") {
             title: title,
             body: body
         },
+        // === BẮT BUỘC CHO SAFARI TRÊN iOS/iPadOS ===
+        webpush: {
+            notification: {
+                title: title,
+                body: body,
+                icon: '/images/weather-icon.png'
+            }
+        },
         topic: topic
     };
 
@@ -43,4 +51,14 @@ async function sendNotification(title, body, topic = "weather_alerts") {
     }
 }
 
-module.exports = { initFirebase, sendNotification };
+async function subscribeToTopic(token, topic = "weather_alerts") {
+    if (!isFirebaseInitialized) return;
+    try {
+        const response = await getMessaging().subscribeToTopic(token, topic);
+        console.log(`[FCM] Đã đăng ký token vào topic ${topic}:`, response);
+    } catch (error) {
+        console.error("[FCM] Lỗi đăng ký topic:", error.message);
+    }
+}
+
+module.exports = { initFirebase, sendNotification, subscribeToTopic };
