@@ -413,6 +413,8 @@ try {
         }).then((token) => {
             if (token) {
                 console.log("FCM Device Token:", token);
+                // === DEBUG: Hiện Token ra màn hình để kiểm tra ===
+                alert("TOKEN MỚI: " + token.substring(0, 20) + "..." + token.substring(token.length - 10));
                 // Gửi Token lên Backend Node.js
                 fetch('/api/fcm-token', {
                     method: 'POST',
@@ -420,15 +422,36 @@ try {
                     body: JSON.stringify({ token: token })
                 }).then(() => {
                     if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Bật Cảnh Báo';
-                    alert("Kích hoạt nhận cảnh báo thành công!");
                 });
             }
         }).catch((err) => {
             console.log("FCM Error:", err);
             if (btn) btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lỗi (Xem Console)';
-            alert("Bạn đã chặn quyền gửi thông báo hoặc có lỗi xảy ra. Hãy mở ổ khóa trên thanh địa chỉ để cấp quyền thủ công.");
+            alert("Lỗi: " + err.message);
         });
     };
+
+    // === TỰ ĐỘNG LÀM MỚI TOKEN MỖI LẦN MỞ TRANG ===
+    // (Fix lỗi Token cũ khi chuyển từ Safari sang Standalone)
+    if (Notification.permission === 'granted') {
+        messaging.getToken({ vapidKey: "BHWPWwRalV6qK3_aYdTPP7T_mebECDxSMR26aVSqeHBGq8keJt6srIwrnaYLh17eZxKGuWE7otorQUJBt8ITbGw" })
+        .then((token) => {
+            if (token) {
+                console.log("[FCM Auto-Refresh] Token hiện tại:", token);
+                // Tự động gửi lại token mới nhất lên backend
+                fetch('/api/fcm-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token })
+                });
+                // Cập nhật nút
+                const btn = document.getElementById('btn-enable-push');
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã Bật Cảnh Báo';
+            }
+        }).catch((err) => {
+            console.log("[FCM Auto-Refresh] Lỗi:", err.message);
+        });
+    }
 
     // Lắng nghe khi đang mở trình duyệt
     messaging.onMessage((payload) => {
