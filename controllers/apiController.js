@@ -2,6 +2,7 @@ const SensorModel = require('../models/sensorModel');
 const AiReportModel = require('../models/aiReportModel');
 const geminiService = require('../services/geminiService');
 const fcmService = require('../services/fcmService');
+const telegramService = require('../services/telegramService');
 
 let lastAiTime = 0;
 let lastRainState = 0; // Lưu trạng thái mưa lần trước
