@@ -36,8 +36,7 @@ async function sendNotification(title, body, topic = "weather_alerts") {
         webpush: {
             notification: {
                 title: title,
-                body: body,
-                icon: '/images/weather-icon.png'
+                body: body
             }
         },
         topic: topic
