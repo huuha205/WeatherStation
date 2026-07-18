@@ -16,7 +16,6 @@ const messaging = firebase.messaging();
 // === FIREBASE SDK (Dành cho Chrome/Android) ===
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] onBackgroundMessage:', payload);
-  // Không gọi showNotification ở đây vì push listener bên dưới đã xử lý
 });
 
 // === PUSH LISTENER THỦ CÔNG (BẮT BUỘC CHO SAFARI trên iOS/iPadOS) ===
@@ -25,14 +24,12 @@ self.addEventListener('push', function(event) {
   
   let title = 'Cảnh báo thời tiết';
   let body = 'Có cảnh báo mới từ hệ thống Smart Weather';
-  let icon = '/images/weather-icon.png';
 
   try {
     const data = event.data.json();
     if (data.notification) {
       title = data.notification.title || title;
       body = data.notification.body || body;
-      icon = data.notification.icon || icon;
     }
   } catch (e) {
     console.log('[SW] Parse error, using defaults');
@@ -40,8 +37,6 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: body,
-    icon: icon,
-    badge: icon,
     vibrate: [200, 100, 200],
     tag: 'weather-alert',
     renotify: true
