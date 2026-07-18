@@ -2,24 +2,60 @@ importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
 // Init Firebase app in service worker
-// MUST match credentials on client side, but since client doesn't have it defined yet 
-// in this boilerplate we just set empty for now, user needs to fill their config.
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  projectId: "YOUR_PROJECT_ID",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBwYbNXHxawRhWQG8eT-c9T8YoXIzUIEKM",
+  authDomain: "webweather-349d9.firebaseapp.com",
+  projectId: "webweather-349d9",
+  storageBucket: "webweather-349d9.firebasestorage.app",
+  messagingSenderId: "904138913216",
+  appId: "1:904138913216:web:71a4603eb214ec1c2d8425"
 });
 
 const messaging = firebase.messaging();
 
+// === FIREBASE SDK (Dành cho Chrome/Android) ===
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/images/weather-icon.png'
+  console.log('[SW] onBackgroundMessage:', payload);
+  // Không gọi showNotification ở đây vì push listener bên dưới đã xử lý
+});
+
+// === PUSH LISTENER THỦ CÔNG (BẮT BUỘC CHO SAFARI trên iOS/iPadOS) ===
+self.addEventListener('push', function(event) {
+  console.log('[SW] Push event received:', event);
+  
+  let title = 'Cảnh báo thời tiết';
+  let body = 'Có cảnh báo mới từ hệ thống Smart Weather';
+  let icon = '/images/weather-icon.png';
+
+  try {
+    const data = event.data.json();
+    if (data.notification) {
+      title = data.notification.title || title;
+      body = data.notification.body || body;
+      icon = data.notification.icon || icon;
+    }
+  } catch (e) {
+    console.log('[SW] Parse error, using defaults');
+  }
+
+  const options = {
+    body: body,
+    icon: icon,
+    badge: icon,
+    vibrate: [200, 100, 200],
+    tag: 'weather-alert',
+    renotify: true
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// Khi user click vào notification thì mở web app
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow('/')
+  );
 });
