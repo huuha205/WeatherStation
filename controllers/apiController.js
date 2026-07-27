@@ -6,8 +6,8 @@ const telegramService = require('../services/telegramService');
 
 let lastAiTime = 0;
 let lastRainState = 0; // Lưu trạng thái mưa lần trước
-const AI_COOLDOWN_MS = 60000; // 30 GIÂY GỌI AI 1 LẦN (Cho đồ án giật giật liên tục)
-const EMERGENCY_COOLDOWN_MS = 60000; // Cooldown khẩn cấp cũng 30 giây
+const AI_COOLDOWN_MS = 40000; // 40 GIÂY GỌI AI 1 LẦN (Tiết kiệm quota Google)
+const EMERGENCY_COOLDOWN_MS = 40000; // Cooldown khẩn cấp cũng 40 giây
 
 exports.receiveSensorData = async (req, res) => {
     try {
